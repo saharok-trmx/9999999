@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lineev — Telegram-боты & Сайты</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg: #1a1a1d;
+            --bg-alt: #232326;
+            --bg-elev: #2a2a2e;
+            --ink: #ececee;
+            --ink-soft: #a8a8b0;
+            --ink-mute: #6e6e78;
+            --accent: #ff5c35;
+            --line: rgba(236, 236, 238, 0.09);
+            --line-strong: rgba(236, 236, 238, 0.16);
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--ink);
+            overflow-x: hidden;
+            cursor: none;
+            line-height: 1.5;
+        }
+
+        /* ===== КУРСОР ===== */
+        .cursor-dot,
+        .cursor-ring {
+            position: fixed;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9999;
+            border-radius: 50%;
+            will-change: transform;
+        }
+
+        .cursor-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--ink);
+            margin: -3px 0 0 -3px;
+            transition: transform 0.15s ease, background 0.2s;
+        }
+
+        .cursor-ring {
+            width: 36px;
+            height: 36px;
+            border: 1.5px solid var(--ink);
+            margin: -18px 0 0 -18px;
+            transition: width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                        height 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                        margin 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.3s,
+                        opacity 0.3s,
+                        background 0.3s;
+            opacity: 0.55;
+        }
+
+        .cursor-ring.is-hover {
+            width: 60px;
+            height: 60px;
+            margin: -30px 0 0 -30px;
+            border-color: var(--accent);
+            background: rgba(255, 92, 53, 0.1);
+            opacity: 1;
+        }
+
+        .cursor-dot.is-hover {
+            background: var(--accent);
+            transform: scale(0);
+        }
+
+        .cursor-ring.is-magnetic {
+            width: 70px;
+            height: 70px;
+            margin: -35px 0 0 -35px;
+            border-color: var(--accent);
+            opacity: 1;
+        }
+
+        .cursor-dot.is-magnetic {
+            transform: scale(0);
+        }
+
+        .cursor-ring.is-click {
+            width: 24px;
+            height: 24px;
+            margin: -12px 0 0 -12px;
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ===== НАВИГАЦИЯ ===== */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 32px 56px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        nav.scrolled {
+            padding: 18px 56px;
+            background: rgba(26, 26, 29, 0.82);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .logo {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            cursor: none;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 36px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 36px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: var(--ink-soft);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            position: relative;
+            padding: 4px 0;
+            transition: color 0.3s;
+            cursor: none;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1.5px;
+            background: var(--accent);
+            transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .nav-links a:hover {
+            color: var(--ink);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Переключатель языка */
+        .lang-switch {
+            display: flex;
+            gap: 4px;
+            padding: 3px;
+            border: 1px solid var(--line-strong);
+            border-radius: 100px;
+            position: relative;
+        }
+
+        .lang-switch button {
+            background: none;
+            border: none;
+            color: var(--ink-mute);
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            padding: 5px 10px;
+            border-radius: 100px;
+            cursor: none;
+            transition: color 0.3s;
+            z-index: 1;
+        }
+
+        .lang-switch button.active {
+            color: var(--bg);
+        }
+
+        .lang-switch .slider {
+            position: absolute;
+            top: 3px;
+            bottom: 3px;
+            left: 3px;
+            width: calc(50% - 3px);
+            background: var(--ink);
+            border-radius: 100px;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .lang-switch.en .slider {
+            transform: translateX(100%);
+        }
+
+        /* ===== HERO ===== */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 56px;
+            position: relative;
+        }
+
+        .hero-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--ink-mute);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-bottom: 32px;
+            opacity: 0;
+            animation: rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+        }
+
+        .hero-meta::before {
+            content: '';
+            width: 32px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .hero-title {
+            font-size: clamp(48px, 9vw, 132px);
+            font-weight: 600;
+            line-height: 0.95;
+            letter-spacing: -0.04em;
+            margin-bottom: 40px;
+        }
+
+        .hero-title .line {
+            display: block;
+            overflow: hidden;
+        }
+
+        .hero-title .line span {
+            display: inline-block;
+            transform: translateY(110%);
+            animation: revealLine 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .hero-title .line:nth-child(1) span { animation-delay: 0.3s; }
+        .hero-title .line:nth-child(2) span { animation-delay: 0.42s; }
+        .hero-title .line:nth-child(3) span { animation-delay: 0.54s; }
+
+        .hero-title em {
+            font-style: normal;
+            color: var(--accent);
+        }
+
+        .hero-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 40px;
+            opacity: 0;
+            animation: rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.9s forwards;
+        }
+
+        .hero-desc {
+            font-size: 16px;
+            color: var(--ink-soft);
+            max-width: 480px;
+            line-height: 1.7;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        .hero-scroll {
+            font-size: 12px;
+            color: var(--ink-mute);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            white-space: nowrap;
+        }
+
+        .hero-scroll .arrow {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--line-strong);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: bob 2s ease-in-out infinite;
+        }
+
+        /* ===== КНОПКИ ===== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            font-size: 14px;
+            font-weight: 500;
+            font-family: inherit;
+            text-decoration: none;
+            border-radius: 100px;
+            border: 1px solid var(--ink);
+            background: var(--ink);
+            color: var(--bg);
+            cursor: none;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                        border-color 0.4s;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--accent);
+            transform: translateY(101%);
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 0;
+        }
+
+        .btn:hover::before {
+            transform: translateY(0);
+        }
+
+        .btn span,
+        .btn .arrow-icon {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn:hover {
+            color: #fff;
+        }
+
+        .btn .arrow-icon {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn:hover .arrow-icon {
+            transform: translateX(4px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--ink);
+            border-color: var(--line-strong);
+        }
+
+        .btn-outline::before {
+            background: var(--ink);
+        }
+
+        .btn-outline:hover {
+            color: var(--bg);
+            border-color: var(--ink);
+        }
+
+        /* ===== СЕКЦИИ ===== */
+        section {
+            padding: 140px 56px;
+            position: relative;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 80px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 24px;
+        }
+
+        .section-label {
+            font-size: 12px;
+            color: var(--ink-mute);
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .section-title {
+            font-size: clamp(28px, 4vw, 48px);
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            text-align: right;
+        }
+
+        .section-title em {
+            font-style: normal;
+            color: var(--accent);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(40px);
+            transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ===== ABOUT ===== */
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 100px;
+            align-items: start;
+        }
+
+        .about-image {
+            position: relative;
+            aspect-ratio: 4/5;
+            overflow: hidden;
+            border-radius: 4px;
+            background: var(--bg-alt);
+        }
+
+        .about-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: grayscale(100%) brightness(0.85);
+        }
+
+        .about-image:hover img {
+            transform: scale(1.05);
+            filter: grayscale(0%) brightness(1);
+        }
+
+        .about-text h3 {
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            margin-bottom: 24px;
+            line-height: 1.3;
+        }
+
+        .about-text p {
+            color: var(--ink-soft);
+            line-height: 1.8;
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+
+        .about-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 28px 0;
+        }
+
+        .tag {
+            font-size: 12px;
+            color: var(--ink-soft);
+            padding: 6px 14px;
+            border: 1px solid var(--line-strong);
+            border-radius: 100px;
+            transition: all 0.3s;
+        }
+
+        .tag:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .about-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+            background: var(--line);
+            border: 1px solid var(--line);
+            margin-top: 40px;
+        }
+
+        .stat {
+            background: var(--bg);
+            padding: 24px;
+        }
+
+        .stat-num {
+            font-size: 36px;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+
+        .stat-num em {
+            font-style: normal;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--ink-mute);
+        }
+
+        /* ===== SKILLS ===== */
+        .skills-list {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid var(--line);
+        }
+
+        .skill-row {
+            display: grid;
+            grid-template-columns: 60px 1fr 2fr auto;
+            gap: 30px;
+            align-items: center;
+            padding: 28px 24px;
+            margin: 0 -24px;
+            border-bottom: 1px solid var(--line);
+            position: relative;
+            cursor: none;
+            transition: padding 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .skill-row::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--bg-elev);
+            transform: scaleY(0);
+            transform-origin: bottom;
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 0;
+            border-radius: 6px;
+        }
+
+        .skill-row:hover::before {
+            transform: scaleY(1);
+        }
+
+        .skill-row > * {
+            position: relative;
+            z-index: 1;
+            transition: color 0.4s;
+        }
+
+        .skill-num {
+            font-size: 13px;
+            color: var(--ink-mute);
+            font-variant-numeric: tabular-nums;
+            transition: color 0.4s;
+        }
+
+        .skill-row:hover .skill-num {
+            color: var(--accent);
+        }
+
+        .skill-name {
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .skill-desc {
+            font-size: 14px;
+            color: var(--ink-soft);
+            transition: color 0.4s;
+        }
+
+        .skill-tag {
+            font-size: 12px;
+            color: var(--ink-mute);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 6px 14px;
+            border: 1px solid var(--line-strong);
+            border-radius: 100px;
+            transition: all 0.4s;
+        }
+
+        .skill-row:hover .skill-tag {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* ===== ПОРТФОЛИО ===== */
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .work {
+            position: relative;
+            aspect-ratio: 4/3;
+            overflow: hidden;
+            border-radius: 6px;
+            cursor: none;
+            background: var(--bg-alt);
+            display: block;
+            text-decoration: none;
+        }
+
+        .work img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: grayscale(100%) brightness(0.7);
+        }
+
+        .work:hover img {
+            transform: scale(1.06);
+            filter: grayscale(0%) brightness(1);
+        }
+
+        .work-info {
+            position: absolute;
+            bottom: 24px;
+            left: 24px;
+            right: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            color: #fff;
+            z-index: 2;
+        }
+
+        .work-info::before {
+            content: '';
+            position: absolute;
+            bottom: -24px;
+            left: -24px;
+            right: -24px;
+            height: 140px;
+            background: linear-gradient(to top, rgba(26,26,29,0.9), transparent);
+            z-index: -1;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .work:hover .work-info::before {
+            opacity: 1;
+        }
+
+        .work-info h4 {
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            transform: translateY(12px);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .work-info > div > span {
+            font-size: 12px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            opacity: 0;
+            transform: translateY(12px);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s;
+        }
+
+        .work:hover .work-info h4,
+        .work:hover .work-info > div > span {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .work-arrow {
+            width: 44px;
+            height: 44px;
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transform: scale(0);
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .work:hover .work-arrow {
+            transform: scale(1);
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* Плейсхолдер-заглушка для проекта */
+        .work-placeholder {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: var(--bg-alt);
+            color: var(--ink-mute);
+            transition: all 0.5s;
+        }
+
+        .work:hover .work-placeholder {
+            background: var(--bg-elev);
+            color: var(--ink-soft);
+        }
+
+        .work-placeholder .icon {
+            font-size: 32px;
+            opacity: 0.5;
+        }
+
+        .work-placeholder .label {
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        /* ===== КОНТАКТЫ ===== */
+        .contact-wrap {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 100px;
+            align-items: start;
+        }
+
+        .contact-left h3 {
+            font-size: clamp(32px, 4vw, 52px);
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 24px;
+        }
+
+        .contact-left h3 em {
+            font-style: normal;
+            color: var(--accent);
+        }
+
+        .contact-left p {
+            color: var(--ink-soft);
+            line-height: 1.8;
+            margin-bottom: 32px;
+        }
+
+        .contact-channels {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .channel {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 0;
+            border-bottom: 1px solid var(--line);
+            text-decoration: none;
+            color: var(--ink);
+            cursor: none;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .channel:hover {
+            padding-left: 8px;
+        }
+
+        .channel-label {
+            font-size: 13px;
+            color: var(--ink-mute);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .channel-value {
+            font-size: 18px;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .channel:hover .channel-value {
+            color: var(--accent);
+        }
+
+        .channel-arrow {
+            font-size: 20px;
+            color: var(--ink-mute);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .channel:hover .channel-arrow {
+            color: var(--accent);
+            transform: translate(3px, -3px);
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .field {
+            position: relative;
+            border-bottom: 1px solid var(--line-strong);
+            transition: border-color 0.4s;
+        }
+
+        .field:focus-within {
+            border-color: var(--ink);
+        }
+
+        .field input,
+        .field textarea {
+            width: 100%;
+            padding: 22px 0;
+            background: transparent;
+            border: none;
+            color: var(--ink);
+            font-size: 16px;
+            font-family: inherit;
+            outline: none;
+            cursor: none;
+            resize: none;
+        }
+
+        .field textarea {
+            min-height: 100px;
+        }
+
+        .field input::placeholder,
+        .field textarea::placeholder {
+            color: var(--ink-mute);
+        }
+
+        .field label {
+            position: absolute;
+            top: 22px;
+            left: 0;
+            font-size: 12px;
+            color: var(--accent);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            opacity: 0;
+            transform: translateY(-6px);
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .field:focus-within label {
+            opacity: 1;
+            transform: translateY(-14px);
+        }
+
+        .field:focus-within input::placeholder,
+        .field:focus-within textarea::placeholder {
+            opacity: 0;
+        }
+
+        .contact-form .btn {
+            align-self: flex-start;
+            margin-top: 32px;
+        }
+
+        /* ===== ФУТЕР ===== */
+        footer {
+            padding: 48px 56px;
+            border-top: 1px solid var(--line);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+
+        .footer-copy {
+            font-size: 13px;
+            color: var(--ink-mute);
+        }
+
+        .socials {
+            display: flex;
+            gap: 8px;
+        }
+
+        .social-link {
+            font-size: 13px;
+            color: var(--ink-soft);
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid var(--line-strong);
+            border-radius: 100px;
+            cursor: none;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .social-link:hover {
+            background: var(--ink);
+            color: var(--bg);
+            border-color: var(--ink);
+            transform: translateY(-2px);
+        }
+
+        /* ===== АНИМАЦИИ ===== */
+        @keyframes rise {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes revealLine {
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(4px); }
+        }
+
+        /* ===== СМЕНА ЯЗЫКА ===== */
+        [data-lang] {
+            display: none !important;
+        }
+
+        html[lang="ru"] [data-lang="ru"] {
+            display: inline !important;
+        }
+
+        html[lang="en"] [data-lang="en"] {
+            display: inline !important;
+        }
+
+        html[lang="ru"] .hero-title .line span[data-lang="ru"],
+        html[lang="en"] .hero-title .line span[data-lang="en"] {
+            display: inline-block !important;
+        }
+
+        html[lang="ru"] .block[data-lang="ru"],
+        html[lang="en"] .block[data-lang="en"],
+        html[lang="ru"] .work-info h4[data-lang="ru"],
+        html[lang="en"] .work-info h4[data-lang="en"],
+        html[lang="ru"] .work-info > div > span[data-lang="ru"],
+        html[lang="en"] .work-info > div > span[data-lang="en"],
+        html[lang="ru"] .work-placeholder .label[data-lang="ru"],
+        html[lang="en"] .work-placeholder .label[data-lang="en"],
+        html[lang="ru"] .field label[data-lang="ru"],
+        html[lang="en"] .field label[data-lang="en"],
+        html[lang="ru"] .stat-label[data-lang="ru"],
+        html[lang="en"] .stat-label[data-lang="en"] {
+            display: block !important;
+        }
+
+        html[lang="ru"] .flex[data-lang="ru"],
+        html[lang="en"] .flex[data-lang="en"] {
+            display: flex !important;
+        }
+
+        /* ===== АДАПТИВ ===== */
+        @media (max-width: 968px) {
+            nav, nav.scrolled { padding: 20px 24px; }
+            section { padding: 90px 24px; }
+            .hero { padding: 0 24px; }
+            .about-grid,
+            .contact-wrap { grid-template-columns: 1fr; gap: 48px; }
+            .portfolio-grid { grid-template-columns: 1fr; }
+            .nav-links { gap: 20px; }
+            .nav-links a { font-size: 13px; }
+            .nav-right { gap: 20px; }
+            .skill-row {
+                grid-template-columns: 40px 1fr auto;
+                gap: 16px;
+            }
+            .skill-desc { display: none; }
+            .hero-bottom { flex-direction: column; align-items: flex-start; }
+            .section-head { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .section-title { text-align: left; }
+            footer { padding: 32px 24px; }
+        }
+
+        @media (max-width: 640px) {
+            .nav-links { display: none; }
+            body, a, button, input, textarea { cursor: auto; }
+            .cursor-dot, .cursor-ring { display: none; }
+            .hero-title { font-size: 44px; }
+            .hero-actions { flex-direction: column; align-self: stretch; }
+            .skill-row { grid-template-columns: 30px 1fr; padding: 20px; }
+            .skill-tag { display: none; }
+            .work-info h4,
+            .work-info > div > span { opacity: 1; transform: none; }
+            .work-info::before { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Курсор -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-ring"></div>
+
+    <!-- Навигация -->
+    <nav id="navbar">
+        <div class="logo">lineev<span>.</span></div>
+        <div class="nav-right">
+            <ul class="nav-links">
+                <li><a href="#about"><span data-lang="ru">Обо мне</span><span data-lang="en">About</span></a></li>
+                <li><a href="#skills"><span data-lang="ru">Услуги</span><span data-lang="en">Services</span></a></li>
+                <li><a href="#work"><span data-lang="ru">Работы</span><span data-lang="en">Work</span></a></li>
+                <li><a href="#contact"><span data-lang="ru">Контакты</span><span data-lang="en">Contact</span></a></li>
+            </ul>
+            <div class="lang-switch" id="langSwitch">
+                <div class="slider"></div>
+                <button data-lang-btn="ru" class="active">RU</button>
+                <button data-lang-btn="en">EN</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-meta">
+            <span data-lang="ru">Telegram-боты · Сайты · AI-автоматизация</span>
+            <span data-lang="en">Telegram Bots · Websites · AI Automation</span>
+        </div>
+        <h1 class="hero-title">
+            <span class="line">
+                <span data-lang="ru">Пишу <em>ботов</em></span>
+                <span data-lang="en">Building <em>bots</em></span>
+            </span>
+            <span class="line">
+                <span data-lang="ru">и создаю <em>сайты</em></span>
+                <span data-lang="en">and crafting <em>websites</em></span>
+            </span>
+            <span class="line">
+                <span data-lang="ru">для автоматизации</span>
+                <span data-lang="en">that automate</span>
+            </span>
+        </h1>
+        <div class="hero-bottom">
+            <div>
+                <p class="hero-desc">
+                    <span data-lang="ru">Меня зовут Линеев. Помогаю бизнесу автоматизировать запись клиентов, обработку заявок и рутину — через Telegram-ботов, сайты и интеграцию AI-агентов.</span>
+                    <span data-lang="en">I'm Lineev. I help businesses automate client booking, lead processing and routine tasks — through Telegram bots, websites and AI agent integration.</span>
+                </p>
+                <div class="hero-actions">
+                    <a href="#contact" class="btn">
+                        <span data-lang="ru">Обсудить проект</span>
+                        <span data-lang="en">Discuss a project</span>
+                        <span class="arrow-icon">→</span>
+                    </a>
+                    <a href="#work" class="btn btn-outline">
+                        <span data-lang="ru">Смотреть работы</span>
+                        <span data-lang="en">View work</span>
+                    </a>
+                </div>
+            </div>
+            <div class="hero-scroll">
+                <span data-lang="ru">Скролл</span>
+                <span data-lang="en">Scroll</span>
+                <span class="arrow">↓</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- About -->
+    <section id="about">
+        <div class="section-head">
+            <span class="section-label">
+                <span data-lang="ru">01 — Обо мне</span>
+                <span data-lang="en">01 — About</span>
+            </span>
+            <h2 class="section-title">
+                <span data-lang="ru">Кто <em>я</em></span>
+                <span data-lang="en">Who <em>I am</em></span>
+            </h2>
+        </div>
+        <div class="about-grid">
+            <div class="about-image reveal">
+                <img src="https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&q=80" alt="Lineev">
+            </div>
+            <div class="about-text reveal">
+                <h3>
+                    <span data-lang="ru">Разрабатываю Telegram-ботов и сайты, которые заменяют рутину автоматикой.</span>
+                    <span data-lang="en">I build Telegram bots and websites that replace routine with automation.</span>
+                </h3>
+                <p>
+                    <span data-lang="ru">Работаю соло — без посредников и лишних звеньев. Это значит: прямой контакт, быстрые решения и полная ответственность за результат. Специализируюсь на ботах для записи клиентов, автоматизации заявок и интеграции AI-агентов в существующие процессы.</span>
+                    <span data-lang="en">I work solo — no middlemen, no extra layers. That means direct communication, fast decisions and full ownership of the result. I specialize in booking bots, lead automation and integrating AI agents into existing workflows.</span>
+                </p>
+                <p>
+                    <span data-lang="ru">Два года в разработке. Самовой пояс +4 (МСК). Открыт к проектам частично — беру столько, сколько могу сделать хорошо.</span>
+                    <span data-lang="en">Two years in development. Based in UTC+4 (Moscow time). Available for projects on a part-time basis — I take only as much as I can deliver well.</span>
+                </p>
+                <div class="about-tags">
+                    <span class="tag">Telegram Bot API</span>
+                    <span class="tag">
+                        <span data-lang="ru">AI-агенты</span>
+                        <span data-lang="en">AI Agents</span>
+                    </span>
+                    <span class="tag">
+                        <span data-lang="ru">Запись клиентов</span>
+                        <span data-lang="en">Booking Systems</span>
+                    </span>
+                    <span class="tag">
+                        <span data-lang="ru">Автоматизация</span>
+                        <span data-lang="en">Automation</span>
+                    </span>
+                    <span class="tag">
+                        <span data-lang="ru">Соло-разработка</span>
+                        <span data-lang="en">Solo Development</span>
+                    </span>
+                </div>
+                <div class="about-stats">
+                    <div class="stat">
+                        <div class="stat-num">2<em>+</em></div>
+                        <div class="stat-label" data-lang="ru">Года опыта</div>
+                        <div class="stat-label" data-lang="en">Years of experience</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-num">4</div>
+                        <div class="stat-label" data-lang="ru">Проекта</div>
+                        <div class="stat-label" data-lang="en">Projects</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-num">+4</div>
+                        <div class="stat-label" data-lang="ru">Часовой пояс</div>
+                        <div class="stat-label" data-lang="en">Timezone</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-num">1</div>
+                        <div class="stat-label" data-lang="ru">Разработчик</div>
+                        <div class="stat-label" data-lang="en">Developer</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills / Services -->
+    <section id="skills">
+        <div class="section-head">
+            <span class="section-label">
+                <span data-lang="ru">02 — Что я делаю</span>
+                <span data-lang="en">02 — What I do</span>
+            </span>
+            <h2 class="section-title">
+                <span data-lang="ru">Услуги и <em>навыки</em></span>
+                <span data-lang="en">Services & <em>skills</em></span>
+            </h2>
+        </div>
+        <div class="skills-list">
+            <div class="skill-row reveal">
+                <span class="skill-num">01</span>
+                <span class="skill-name">
+                    <span data-lang="ru">Telegram-боты</span>
+                    <span data-lang="en">Telegram Bots</span>
+                </span>
+                <span class="skill-desc">
+                    <span data-lang="ru">Боты для записи, заявок, уведомлений и клиентских сценариев</span>
+                    <span data-lang="en">Bots for booking, leads, notifications and client scenarios</span>
+                </span>
+                <span class="skill-tag" data-lang="ru">Ключевое</span>
+                <span class="skill-tag" data-lang="en">Core</span>
+            </div>
+            <div class="skill-row reveal">
+                <span class="skill-num">02</span>
+                <span class="skill-name">
+                    <span data-lang="ru">Сайты и лендинги</span>
+                    <span data-lang="en">Websites & landings</span>
+                </span>
+                <span class="skill-desc">
+                    <span data-lang="ru">Сайты для записи клиентов, лендинги, интеграция с ботами</span>
+                    <span data-lang="en">Booking websites, landings, integration with bots</span>
+                </span>
+                <span class="skill-tag" data-lang="ru">Ключевое</span>
+                <span class="skill-tag" data-lang="en">Core</span>
+            </div>
+            <div class="skill-row reveal">
+                <span class="skill-num">03</span>
+                <span class="skill-name">
+                    <span data-lang="ru">AI-агенты</span>
+                    <span data-lang="en">AI Agents</span>
+                </span>
+                <span class="skill-desc">
+                    <span data-lang="ru">Подключение и настройка AI-агентов для обработки запросов</span>
+                    <span data-lang="en">Connecting and tuning AI agents for request processing</span>
+                </span>
+                <span class="skill-tag" data-lang="ru">Актуально</span>
+                <span class="skill-tag" data-lang="en">Growing</span>
+            </div>
+            <div class="skill-row reveal">
+                <span class="skill-num">04</span>
+                <span class="skill-name">
+                    <span data-lang="ru">Автоматизация</span>
+                    <span data-lang="en">Automation</span>
+                </span>
+                <span class="skill-desc">
+                    <span data-lang="ru">Связки сервисов, обработка действий, автоматические сценарии</span>
+                    <span data-lang="en">Service integrations, action processing, automated scenarios</span>
+                </span>
+                <span class="skill-tag" data-lang="ru">Гибко</span>
+                <span class="skill-tag" data-lang="en">Flexible</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Portfolio -->
+    <section id="work">
+        <div class="section-head">
+            <span class="section-label">
+                <span data-lang="ru">03 — Работы</span>
+                <span data-lang="en">03 — Work</span>
+            </span>
+            <h2 class="section-title">
+                <span data-lang="ru">Проекты в <em>работе</em></span>
+                <span data-lang="en">Projects in <em>progress</em></span>
+            </h2>
+        </div>
+        <div class="portfolio-grid">
+            <a href="#" class="work reveal">
+                <div class="work-placeholder">
+                    <span class="icon">◐</span>
+                    <span class="label" data-lang="ru">Скоро</span>
+                    <span class="label" data-lang="en">Coming soon</span>
+                </div>
+                <div class="work-info">
+                    <div>
+                        <h4 data-lang="ru">Проект 01</h4>
+                        <h4 data-lang="en">Project 01</h4>
+                        <span data-lang="ru">Telegram-бот · В работе</span>
+                        <span data-lang="en">Telegram bot · In progress</span>
+                    </div>
+                    <div class="work-arrow">↗</div>
+                </div>
+            </a>
+            <a href="#" class="work reveal">
+                <div class="work-placeholder">
+                    <span class="icon">◑</span>
+                    <span class="label" data-lang="ru">Скоро</span>
+                    <span class="label" data-lang="en">Coming soon</span>
+                </div>
+                <div class="work-info">
+                    <div>
+                        <h4 data-lang="ru">Проект 02</h4>
+                        <h4 data-lang="en">Project 02</h4>
+                        <span data-lang="ru">Сайт записи · В работе</span>
+                        <span data-lang="en">Booking site · In progress</span>
+                    </div>
+                    <div class="work-arrow">↗</div>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact">
+        <div class="section-head">
+            <span class="section-label">
+                <span data-lang="ru">04 — Контакты</span>
+                <span data-lang="en">04 — Contact</span>
+            </span>
+            <h2 class="section-title">
+                <span data-lang="ru">Обсудим <em>задачу</em></span>
+                <span data-lang="en">Let's <em>talk</em></span>
+            </h2>
+        </div>
+        <div class="contact-wrap">
+            <div class="contact-left reveal">
+                <h3>
+                    <span data-lang="ru">Есть задача? <em>Напишите</em> — обсудим.</span>
+                    <span data-lang="en">Got a task? <em>Write</em> to me — let's discuss.</span>
+                </h3>
+                <p>
+                    <span data-lang="ru">Отвечаю в течение дня. Работаю с проектами частично — уточните задачу, и я скажу, возьмусь ли и в какие сроки.</span>
+                    <span data-lang="en">I reply within a day. Available for projects on a part-time basis — describe your task and I'll tell you if I can take it and when.</span>
+                </p>
+                <div class="contact-channels">
+                    <a href="mailto:alexplot2234@gmail.com" class="channel">
+                        <div>
+                            <div class="channel-label">Email</div>
+                            <div class="channel-value">alexplot2234@gmail.com</div>
+                        </div>
+                        <span class="channel-arrow">↗</span>
+                    </a>
+                    <a href="https://t.me/lineev_tm" target="_blank" class="channel">
+                        <div>
+                            <div class="channel-label">Telegram</div>
+                            <div class="channel-value">@lineev_tm</div>
+                        </div>
+                        <span class="channel-arrow">↗</span>
+                    </a>
+                </div>
+            </div>
+            <form class="contact-form reveal" id="contactForm">
+                <div class="field">
+                    <label data-lang="ru">Имя</label>
+                    <label data-lang="en">Name</label>
+                    <input type="text" placeholder="Name" required>
+                </div>
+                <div class="field">
+                    <label>Email</label>
+                    <input type="email" placeholder="email@example.com" required>
+                </div>
+                <div class="field">
+                    <label data-lang="ru">Задача</label>
+                    <label data-lang="en">Task</label>
+                    <textarea data-placeholder-ru="Опишите задачу..." data-placeholder-en="Describe your task..." placeholder="Опишите задачу..." required></textarea>
+                </div>
+                <button type="submit" class="btn">
+                    <span data-lang="ru">Отправить</span>
+                    <span data-lang="en">Send</span>
+                    <span class="arrow-icon">→</span>
+                </button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <span class="footer-copy">
+            <span data-lang="ru">© 2025 Lineev — Telegram-боты, сайты, автоматизация</span>
+            <span data-lang="en">© 2025 Lineev — Telegram bots, websites, automation</span>
+        </span>
+        <div class="socials">
+            <a href="https://t.me/lineev_tm" target="_blank" class="social-link">Telegram</a>
+            <a href="mailto:alexplot2234@gmail.com" class="social-link">Email</a>
+        </div>
+    </footer>
+
+    <script>
+        /* ===== ПЕРЕКЛЮЧАТЕЛЬ ЯЗЫКА ===== */
+        const langSwitch = document.getElementById('langSwitch');
+        const langButtons = langSwitch.querySelectorAll('button[data-lang-btn]');
+        const htmlEl = document.documentElement;
+
+        function setLang(lang) {
+            htmlEl.setAttribute('lang', lang);
+            langSwitch.classList.toggle('en', lang === 'en');
+            langButtons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.langBtn === lang);
+            });
+            const ta = document.querySelector('.field textarea');
+            if (ta) {
+                ta.placeholder = lang === 'ru' ? ta.dataset.placeholderRu : ta.dataset.placeholderEn;
+            }
+            try { localStorage.setItem('lang', lang); } catch(e) {}
+        }
+
+        langButtons.forEach(btn => {
+            btn.addEventListener('click', () => setLang(btn.dataset.langBtn));
+        });
+
+        let savedLang = 'ru';
+        try { savedLang = localStorage.getItem('lang') || 'ru'; } catch(e) {}
+        setLang(savedLang);
+
+        /* ===== КУРСОР С МАГНИТИЗМОМ ===== */
+        const dot = document.querySelector('.cursor-dot');
+        const ring = document.querySelector('.cursor-ring');
+        
+        let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        let ringPos = { x: mouse.x, y: mouse.y };
+        let magnetTarget = null;
+
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+            dot.style.transform = `translate(${mouse.x}px, ${mouse.y}px)`;
+        });
+
+        function animateRing() {
+            let targetX = mouse.x;
+            let targetY = mouse.y;
+            
+            if (magnetTarget) {
+                const rect = magnetTarget.getBoundingClientRect();
+                targetX = rect.left + rect.width / 2;
+                targetY = rect.top + rect.height / 2;
+            }
+            
+            ringPos.x = lerp(ringPos.x, targetX, 0.15);
+            ringPos.y = lerp(ringPos.y, targetY, 0.15);
+            
+            ring.style.transform = `translate(${ringPos.x}px, ${ringPos.y}px)`;
+            
+            requestAnimationFrame(animateRing);
+        }
+        animateRing();
+
+        const hoverables = document.querySelectorAll('a, button, input, textarea, .skill-row, .work, .social-link, .channel');
+        const magnetables = document.querySelectorAll('.btn, .social-link, .work-arrow, .nav-links a, .channel-arrow');
+
+        hoverables.forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                ring.classList.add('is-hover');
+                dot.classList.add('is-hover');
+            });
+            el.addEventListener('mouseleave', () => {
+                ring.classList.remove('is-hover');
+                dot.classList.remove('is-hover');
+                magnetTarget = null;
+                ring.classList.remove('is-magnetic');
+                dot.classList.remove('is-magnetic');
+            });
+        });
+
+        magnetables.forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                magnetTarget = el;
+                ring.classList.add('is-magnetic');
+                dot.classList.add('is-magnetic');
+            });
+        });
+
+        document.addEventListener('mousedown', () => ring.classList.add('is-click'));
+        document.addEventListener('mouseup', () => ring.classList.remove('is-click'));
+
+        document.addEventListener('mouseleave', () => {
+            dot.style.opacity = '0';
+            ring.style.opacity = '0';
+        });
+        document.addEventListener('mouseenter', () => {
+            dot.style.opacity = '1';
+            ring.style.opacity = '0.55';
+        });
+
+        /* ===== NAVBAR SCROLL ===== */
+        const navbar = document.getElementById('navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        /* ===== REVEAL ANIMATIONS ===== */
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry, i) => {
+                if (entry.isIntersecting) {
+                    setTimeout(() => entry.target.classList.add('visible'), i * 80);
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+        /* ===== FORM ===== */
+        document.getElementById('contactForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const original = btn.innerHTML;
+            const lang = htmlEl.getAttribute('lang');
+            btn.innerHTML = lang === 'ru' ? '<span>Отправлено ✓</span>' : '<span>Sent ✓</span>';
+            btn.style.background = 'var(--accent)';
+            btn.style.borderColor = 'var(--accent)';
+            setTimeout(() => {
+                btn.innerHTML = original;
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                e.target.reset();
+            }, 2500);
+        });
+
+        /* ===== SMOOTH SCROLL ===== */
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    </script>
+</body>
+</html>
